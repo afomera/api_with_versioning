@@ -6,4 +6,12 @@ class Api::SecretKey < ApplicationRecord
   def self.secure_token_prefix
     "sk"
   end
+
+  def metadata
+    {}
+  end
+
+  def id
+    token
+  end
 end

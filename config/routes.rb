@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   namespace :api do
     resources :secret_keys
+    
+    namespace :v1 do
+      get 'me' => 'me#show'
+    end
   end
   root to: "accounts#index"
   resources :accounts
