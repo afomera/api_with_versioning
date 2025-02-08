@@ -3,28 +3,23 @@
 module Api
   module V1
     class MeController < BaseController
-      include Api::VersionedResponse
-
-      versioned_response do
-        version "2025-02-07" do
-          field :account do
-            fields :id, :name, :created, :updated_at, :metadata, :livemode
-          end
-          field :api_credentials do
-            fields :id, :token, :created, :livemode, :metadata
-          end
-        end
-
-        version "2025-02-06" do
-          field :account do
-            fields :id, :name, :created, :updated_at, :metadata, :livemode
-          end
-          # api_credentials not included in this version
-        end
-      end
-
       def show
         @account = current_account
+        render json: transform_response(account_data)
+      end
+
+      private
+
+      def account_data
+        {
+          id: @account.id,
+          object: "account",
+          name: @account.name,
+          created: @account.created_at.to_i,
+          updated_at: @account.updated_at.iso8601,
+          metadata: {},
+          livemode: false
+        }
       end
     end
   end

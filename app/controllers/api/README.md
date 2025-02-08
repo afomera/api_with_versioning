@@ -1,73 +1,90 @@
 # API Versioning System
 
-This API uses a date-based versioning system that allows for flexible changes to response structures while maintaining backward compatibility. The response format follows Stripe's API style.
+Our API uses a date-based versioning system that allows for flexible changes while maintaining backward compatibility. Each change is encapsulated in its own class, making it easy to track and understand API evolution over time.
 
 ## Version Format
 
-Versions are specified using ISO 8601 dates (YYYY-MM-DD). For example:
-
-- `2025-02-07`
-- `2025-02-06`
-
-## Making API Requests
-
-Include the version in the `Accept` header:
+Versions are specified using ISO 8601 dates (YYYY-MM-DD) in the `App-Version` header:
 
 ```
-Accept: application/json; version=2025-02-07
+App-Version: 2025-02-07
 ```
 
 If no version is specified, the latest version will be used.
 
-## Defining Versioned Responses
+## How Changes Work
 
-Controllers can define different response structures for different versions using the `versioned_response` DSL:
+Each change to the API is defined as a separate class that:
+
+1. Documents what changed
+2. Specifies which resource types it affects
+3. Defines the type changes (e.g., Array to Hash)
+4. Implements the transformation logic
+
+Example:
 
 ```ruby
-class ExampleController < Api::V1::BaseController
-  include Api::VersionedResponse
+class CollapseApiCredentials < AbstractVersionChange
+  description \
+    "Account responses will now include a single api_credential object " \
+    "instead of an array of api_credentials. This simplifies the API " \
+    "by only exposing the primary API key."
 
-  versioned_response do
-    version "2025-02-07" do
-      field :account do
-        fields :id, :email, :name, :created, :updated_at, :metadata, :livemode
-      end
-      field :api_credentials do
-        fields :id, :token, :created, :livemode, :metadata
-      end
-    end
+  response Resources::Account do
+    change :api_credentials, type_old: Array, type_new: NilClass
+    change :api_credential, type_old: NilClass, type_new: Hash
 
-    version "2025-02-06" do
-      field :account do
-        fields :id, :email, :name, :created, :updated_at, :metadata, :livemode
+    run do |data|
+      if data[:api_credentials]&.any?
+        data.merge(
+          api_credential: data[:api_credentials].first
+        ).except(:api_credentials)
+      else
+        data.except(:api_credentials)
       end
-      # api_credentials not included in this version
     end
   end
 end
 ```
 
-## Response Templates
+## Version History
 
-Use the versioning helpers in your JBuilder templates:
+### 2025-02-07
 
-```ruby
-# Root-level fields
-render_versioned_fields(json, @account, :account)
-json.object "account"
+- Changed: Account responses now include a single `api_credential` object instead of an array of `api_credentials`
+- Reason: Simplify the API by only exposing the primary API key
 
-# Collection with nested objects
-if version_fields(:api_credentials)
-  json.api_credentials @account.api_secret_keys do |key|
-    render_versioned_fields(json, key, :api_credentials)
-    json.object "api_credential"
-  end
-end
-```
+### 2025-02-06
+
+- Added: Account responses now include an array of `api_credentials`
+- Reason: Allow clients to access their API keys
 
 ## Example Responses
 
 ### Version 2025-02-07
+
+```json
+{
+  "id": "acc_123",
+  "object": "account",
+  "email": "user@example.com",
+  "name": "User",
+  "created": 1707345600,
+  "updated_at": "2025-02-07T12:00:00Z",
+  "metadata": {},
+  "livemode": false,
+  "api_credential": {
+    "id": "sk_123",
+    "object": "api_credential",
+    "token": "sk_123",
+    "created": 1707345600,
+    "livemode": false,
+    "metadata": {}
+  }
+}
+```
+
+### Version 2025-02-06
 
 ```json
 {
@@ -92,21 +109,6 @@ end
 }
 ```
 
-### Version 2025-02-06
-
-```json
-{
-  "id": "acc_123",
-  "object": "account",
-  "email": "user@example.com",
-  "name": "User",
-  "created": 1707345600,
-  "updated_at": "2025-02-07T12:00:00Z",
-  "metadata": {},
-  "livemode": false
-}
-```
-
 ## Error Handling
 
 Invalid or unsupported versions will return a 400 Bad Request response:
@@ -117,10 +119,11 @@ Invalid or unsupported versions will return a 400 Bad Request response:
 }
 ```
 
-or
+## Adding New Changes
 
-```json
-{
-  "error": "Unsupported API version: 2024-01-01"
-}
-```
+1. Create a new class in `app/models/api/changes/` that inherits from `AbstractVersionChange`
+2. Document the change with a clear description
+3. Specify which resource type it affects
+4. Define the field and type changes
+5. Implement the transformation logic
+6. Add the change to `Api::VersionChanges::VERSIONS` with its effective date
