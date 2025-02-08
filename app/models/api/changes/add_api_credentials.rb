@@ -11,7 +11,7 @@ module Api
         change :api_credentials, type_old: NilClass, type_new: Array
 
         run do |data|
-          account = Account.find(data[:id].sub(/^acc_/, ''))
+          account = Account.find(data[:id])
           data.merge(
             api_credentials: Api::ApiCredentialSerializer.serialize(account.api_secret_keys)
           )

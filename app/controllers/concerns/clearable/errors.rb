@@ -13,7 +13,7 @@ module Clearable::Errors
 
     def respond_with_not_found(exception)
       error = if exception.id
-        "Couldn't find #{exception.model.downcase} with #{exception.primary_key} = #{exception.id}"
+        "Couldn't find #{exception.model.downcase} with #{exception.primary_key} = #{exception.id} in #{Current.mode} mode"
       else
         "Couldn't find #{exception.model.downcase}"
       end

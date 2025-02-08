@@ -3,7 +3,11 @@ class Api::SecretKeysController < ApplicationController
 
   # GET /api/secret_keys or /api/secret_keys.json
   def index
-    @api_secret_keys = Api::SecretKey.all
+    @api_secret_keys = if params[:mode].present?
+                        Api::SecretKey.where(mode: params[:mode])
+                      else
+                        Api::SecretKey.all
+                      end
   end
 
   # GET /api/secret_keys/1 or /api/secret_keys/1.json
@@ -21,11 +25,19 @@ class Api::SecretKeysController < ApplicationController
 
   # POST /api/secret_keys or /api/secret_keys.json
   def create
-    @api_secret_key = Api::SecretKey.new(api_secret_key_params)
+    account = Account.find(api_secret_key_params[:account_id])
+    mode = api_secret_key_params[:mode] || (account.livemode? ? 'live' : 'test')
+    
+    @api_secret_key = Api::SecretKey.new(
+      api_secret_key_params.merge(mode: mode)
+    )
 
     respond_to do |format|
       if @api_secret_key.save
-        format.html { redirect_to @api_secret_key, notice: "Secret key was successfully created." }
+        format.html { 
+          redirect_to @api_secret_key, 
+          notice: "#{@api_secret_key.mode.titleize} mode secret key was successfully created." 
+        }
         format.json { render :show, status: :created, location: @api_secret_key }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -65,6 +77,6 @@ class Api::SecretKeysController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def api_secret_key_params
-      params.expect(api_secret_key: [ :token, :account_id ])
+      params.require(:api_secret_key).permit(:token, :account_id, :mode)
     end
 end

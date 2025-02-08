@@ -4,7 +4,7 @@ module Api
   module V1
     class MeController < BaseController
       def show
-        @account = current_account
+        @account = current_scope.find(current_account.id)
         render json: transform_response(account_data)
       end
 
@@ -18,8 +18,18 @@ module Api
           created: @account.created_at.to_i,
           updated_at: @account.updated_at.iso8601,
           metadata: {},
-          livemode: false
+          livemode: @account.livemode?
         }
+      end
+
+      def current_scope
+        @current_scope ||= begin
+          if @api_credentials.live?
+            Account.where(livemode: true)
+          else
+            Account.where(livemode: false)
+          end
+        end
       end
     end
   end

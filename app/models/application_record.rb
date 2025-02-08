@@ -7,14 +7,6 @@ class ApplicationRecord < ActiveRecord::Base
     created_at.to_i
   end
 
-  def livemode
-    false
-  end
-
-  def metadata
-    {}
-  end
-
   def id
     return super unless self.class.id_prefix
     "#{self.class.id_prefix}_#{super}"

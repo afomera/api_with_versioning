@@ -13,7 +13,7 @@ module Api
         change :api_credential, type_old: NilClass, type_new: Hash
 
         run do |data|
-          account = Account.find(data[:id].sub(/^acc_/, ''))
+          account = Account.find(data[:id])
           credentials = Api::ApiCredentialSerializer.serialize(account.api_secret_keys.first)
           
           data = data.except(:api_credentials)

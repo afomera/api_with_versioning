@@ -3,14 +3,14 @@
 module Api
   module Resources
     class Account < Base
-      required :id, String
+      required :id, Integer
       required :object, String
       # required :email, String
       required :name, String
       required :created, Integer
       required :updated_at, String
       required :metadata, Hash
-      required :livemode, FalseClass
+      required :livemode, [TrueClass, FalseClass]
       optional :api_credentials, Array
       optional :api_credential, Hash
     end
@@ -20,7 +20,7 @@ module Api
       required :object, String
       required :token, String
       required :created, Integer
-      required :livemode, FalseClass
+      required :livemode, [TrueClass, FalseClass]
       required :metadata, Hash
     end
   end

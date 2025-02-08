@@ -10,11 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_08_002824) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_08_063252) do
   create_table "accounts", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "livemode", default: false, null: false
+    t.index ["livemode"], name: "index_accounts_on_livemode"
   end
 
   create_table "api_secret_keys", force: :cascade do |t|
@@ -22,7 +24,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_08_002824) do
     t.integer "account_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "mode", default: "test", null: false
     t.index ["account_id"], name: "index_api_secret_keys_on_account_id"
+    t.index ["mode"], name: "index_api_secret_keys_on_mode"
     t.index ["token"], name: "index_api_secret_keys_on_token", unique: true
   end
 

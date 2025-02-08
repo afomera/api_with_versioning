@@ -22,8 +22,14 @@ module Api
               raise ValidationError, "Missing required field: #{field}"
             end
 
-            if data.key?(field) && !data[field].is_a?(definition[:type])
-              raise ValidationError, "Invalid type for #{field}: expected #{definition[:type]}, got #{data[field].class}"
+            if data.key?(field)
+              types = Array(definition[:type])
+              valid = types.any? { |type| data[field].is_a?(type) }
+
+              unless valid
+                Rails.logger.error("Invalid type for #{field}: expected one of #{types.join(', ')}, got #{data[field].class}")
+                raise ValidationError, "Invalid type for #{field}: expected one of #{types.join(', ')}, got #{data[field].class}"
+              end
             end
           end
         end
