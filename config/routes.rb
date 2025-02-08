@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  namespace :api do
+    resources :secret_keys
+  end
   root to: "accounts#index"
   resources :accounts
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
